@@ -3,7 +3,7 @@
 > Scalable gaming statistics platform for **League of Legends** and **Teamfight Tactics (TFT)**.  
 > Real-time match data, ranked stats, builds, and live game tracking — similar to Porofessor or OP.GG.
 
-![Status](https://img.shields.io/badge/status-in%20development-yellow)
+![Status](https://img.shields.io/badge/status-ready%20for%20deployment-success)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
@@ -14,9 +14,9 @@
 - 📊 **Ranked Stats** — Solo/Duo and Flex queue statistics with tier visualization
 - 📜 **Match History** — Detailed match history with KDA, CS, items, damage, and more
 - ⚡ **Live Game** — Real-time spectator data when a summoner is in-game (polling + WebSocket)
-- 🎯 **Champion Builds** — Popular builds aggregated from match data *(coming soon)*
-- 🧩 **TFT Support** — Full TFT stats, match history, and meta comps *(coming soon)*
+- 🧩 **TFT Support (Complete)** — Full TFT stats, match history, and smart icon resolution (handling DDragon/CDragon fallbacks and Riot's PUUID deprecations).
 - 🌐 **Multi-Region** — Support for all Riot API regions (LAS, LAN, NA, EUW, KR, etc.)
+- 🎯 **Champion Builds** — Popular builds aggregated from match data *(coming soon)*
 
 ---
 
@@ -70,16 +70,15 @@ Client (Next.js) ──→ Backend (NestJS) ──→ Riot Games API
 | `GET` | `/api/matches/:region/:name/:tag?count=20&queue=420` | Get match history |
 | `GET` | `/api/matches/detail/:region/:matchId` | Get match detail |
 | `GET` | `/api/live-game/:region/:name/:tag` | Check live game |
-| `WS` | `/live-game` | WebSocket for live updates |
-| `GET` | `/api/builds/:championName` | Get champion builds |
-| `GET` | `/api/tft/summoner/:region/:name/:tag` | Get TFT profile |
+| `WS`  | `/live-game` | WebSocket for live updates |
+| `GET` | `/api/tft/summoner/:region/:name/:tag` | Get TFT profile & ranked stats (PUUID supported) |
 | `GET` | `/api/tft/matches/:region/:name/:tag` | Get TFT match history |
 
 Full API documentation available at `http://localhost:3001/docs` (Swagger UI).
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Getting Started (Local Development)
 
 ### Prerequisites
 
@@ -114,10 +113,6 @@ cp .env.example .env
 docker compose up -d
 ```
 
-This starts:
-- **PostgreSQL** on port `5432`
-- **Redis** on port `6379`
-
 ### 4. Run Development Servers
 
 ```bash
@@ -129,68 +124,37 @@ npm run dev:api    # Backend on http://localhost:3001
 npm run dev:web    # Frontend on http://localhost:3000
 ```
 
-### 5. Open the App
-
-- **Frontend**: http://localhost:3000
-- **API Docs**: http://localhost:3001/docs
-
 ---
 
-## 📂 Project Structure
+## 📦 Deployment Guide
 
-### Backend (`apps/api/`)
+To deploy this monorepo to production for free (or extremely low cost), follow this architecture:
 
-```
-src/
-├── main.ts                    # Bootstrap, CORS, Swagger
-├── app.module.ts              # Root module
-├── riot-api/                  # Core Riot API HTTP client
-│   ├── riot-api.module.ts     # Global module
-│   └── riot-api.service.ts    # Secure HTTP client with retry + rate limiting
-├── summoner/                  # Summoner profile & search
-│   ├── summoner.controller.ts # REST endpoints
-│   └── summoner.service.ts    # Business logic
-├── match/                     # Match history & detail
-│   ├── match.controller.ts
-│   └── match.service.ts
-├── live-game/                 # Live/spectator data
-│   ├── live-game.controller.ts  # REST fallback
-│   ├── live-game.service.ts     # Spectator API client
-│   └── live-game.gateway.ts     # Socket.IO WebSocket gateway
-├── builds/                    # Champion builds
-│   ├── builds.controller.ts
-│   └── builds.service.ts
-└── tft/                       # TFT-specific endpoints
-    ├── tft.controller.ts
-    └── tft.service.ts
-```
+### 1. Database & Cache (The Infrastructure)
+- **PostgreSQL**: Create a free serverless Postgres database on **[Neon.tech](https://neon.tech/)** or **[Supabase](https://supabase.com/)**. Get your `DATABASE_URL`.
+- **Redis**: Create a free serverless Redis database on **[Upstash](https://upstash.com/)**. Get your `REDIS_HOST` and `REDIS_PORT`.
 
-### Frontend (`apps/web/`)
+### 2. Backend (Render / Railway)
+Deploy the NestJS API to **[Render](https://render.com/)** or **[Railway](https://railway.app/)**:
+1. Connect your GitHub repository.
+2. Build Command: `npm install && npm run build --filter=api`
+3. Start Command: `npm run start:prod --filter=api`
+4. Set the following **Environment Variables**:
+   - `RIOT_API_KEY`: Your production Riot API Key
+   - `DATABASE_URL`: Your Neon/Supabase connection string
+   - `REDIS_HOST` / `REDIS_PORT`: Your Upstash Redis credentials
+   - `NODE_ENV`: `production`
 
-```
-src/
-├── app/
-│   ├── layout.tsx             # Root layout (Navbar, Footer)
-│   ├── page.tsx               # Home page (search)
-│   ├── globals.css            # Design system
-│   ├── summoner/[region]/[name]/[tag]/
-│   │   ├── page.tsx           # Summoner profile
-│   │   └── loading.tsx        # Loading skeleton
-│   ├── live/[region]/[name]/[tag]/
-│   │   └── page.tsx           # Live game view
-│   ├── champions/
-│   │   └── page.tsx           # Champions list (coming soon)
-│   └── tft/
-│       └── page.tsx           # TFT home
-├── components/
-│   ├── layout/                # Navbar, Footer
-│   ├── search/                # SearchBar with region selector
-│   ├── summoner/              # ProfileHeader, RankedCard, MatchHistory
-│   └── live-game/             # LiveGameBanner
-└── lib/
-    ├── api.ts                 # Backend API client
-    └── ddragon.ts             # Data Dragon CDN helpers
-```
+### 3. Frontend (Vercel)
+Deploy the Next.js Web App to **[Vercel](https://vercel.com/)**:
+1. Import your GitHub repository to Vercel.
+2. Vercel automatically detects the **Turborepo** and **Next.js** framework.
+3. Set the **Root Directory** to `apps/web`.
+4. Set the following **Environment Variables**:
+   - `NEXT_PUBLIC_API_URL`: The URL provided by your Backend deployment (e.g., `https://ggstats-api.onrender.com`).
+5. Click **Deploy**.
+
+*With this setup, every `git push origin main` will automatically trigger a zero-downtime deployment for both your frontend and backend.*
 
 ---
 
@@ -203,7 +167,6 @@ The app uses a **premium dark gaming aesthetic** built with vanilla CSS custom p
 - **Tier-based color coding** (Iron → Challenger)
 - **Micro-animations** (fade-in, stagger, shimmer loading)
 - **Responsive design** (mobile-first breakpoints)
-- **Typography**: Inter (UI), Outfit (headings), JetBrains Mono (stats)
 
 ---
 
@@ -211,70 +174,10 @@ The app uses a **premium dark gaming aesthetic** built with vanilla CSS custom p
 
 | Phase | Features | Status |
 |:---|:---|:---|
-| **Phase 1** | Core search, profile, match history, live game | ✅ In Progress |
+| **Phase 1** | Core search, profile, match history, live game, **TFT Integration** | ✅ Completed |
 | **Phase 2** | Auth (NextAuth), favorites, search history, player comparison | 📋 Planned |
 | **Phase 3** | Advanced analytics (CS/min trends, damage graphs, heatmaps) | 📋 Planned |
 | **Phase 4** | More games (Valorant — same Riot API) | 📋 Planned |
-| **Phase 5** | PWA / Desktop app, push notifications | 📋 Planned |
-
----
-
-## 🔐 Security
-
-- API keys are stored **only in `.env`** files (gitignored)
-- All Riot API calls are **proxied through the backend** — keys never reach the client
-- **Rate limiting** on API endpoints (60 req/min per IP)
-- **Input validation** on all endpoints via class-validator
-- Riot API client includes **retry with backoff** for rate limit handling
-
----
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-npm test
-
-# Backend unit tests
-cd apps/api && npm test
-
-# Backend e2e tests
-cd apps/api && npm run test:e2e
-```
-
----
-
-## 📦 Deployment
-
-### Frontend (Vercel)
-
-The Next.js frontend is optimized for Vercel deployment:
-
-```bash
-# Build
-cd apps/web && npm run build
-```
-
-Set environment variables in Vercel dashboard:
-- `NEXT_PUBLIC_API_URL` — Your backend URL
-- `NEXT_PUBLIC_WS_URL` — Your WebSocket URL
-
-### Backend (Railway / Render)
-
-The NestJS backend can be deployed to any Node.js hosting:
-
-```bash
-# Build
-cd apps/api && npm run build
-
-# Start production
-cd apps/api && npm run start:prod
-```
-
-Required environment variables:
-- `RIOT_API_KEY` — Your Riot Games API key
-- `DATABASE_URL` — PostgreSQL connection string
-- `REDIS_HOST` / `REDIS_PORT` — Redis connection
 
 ---
 
@@ -283,9 +186,3 @@ Required environment variables:
 This project is for educational and portfolio purposes.
 
 **GG Stats** isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties.
-
----
-
-## 🤝 Contributing
-
-This is a personal portfolio project, but suggestions and feedback are welcome! Feel free to open an issue.

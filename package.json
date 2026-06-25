@@ -1,0 +1,29 @@
+{
+  "name": "gg-stats",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Scalable gaming statistics platform for League of Legends & TFT",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "dev:api": "turbo run dev --filter=@gg-stats/api",
+    "dev:web": "turbo run dev --filter=@gg-stats/web",
+    "build:api": "turbo run build --filter=@gg-stats/api",
+    "build:web": "turbo run build --filter=@gg-stats/web",
+    "clean": "turbo run clean && rimraf node_modules"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.0",
+    "rimraf": "^6.0.1"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "npm@10.0.0"
+}

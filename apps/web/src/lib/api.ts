@@ -122,7 +122,7 @@ class ApiClient {
   // ─── TFT ───────────────────────────────────
 
   async getTftSummoner(region: string, gameName: string, tagLine: string) {
-    return this.request(
+    return this.request<any>(
       `/tft/summoner/${region}/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}`,
       { revalidate: 300 },
     );
@@ -134,7 +134,7 @@ class ApiClient {
     tagLine: string,
     count = 20,
   ) {
-    return this.request(
+    return this.request<any[]>(
       `/tft/matches/${region}/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}?count=${count}`,
       { cache: 'no-store' },
     );
